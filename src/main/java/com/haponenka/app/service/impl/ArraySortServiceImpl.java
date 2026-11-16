@@ -12,45 +12,41 @@ public class ArraySortServiceImpl implements ArraySortService {
 
   @Override
   public void bubbleSort(CustomArray customArray) throws CustomArrayException {
-    if (customArray != null) {
-      int[] array = customArray.getElements();
-      int n = array.length;
-      for (int i = 0; i < n - 1; i++) {
-        for (int j = 0; j < n - i - 1; j++) {
-          if (array[j] > array[j + 1]) {
-            int temp = array[j];
-            array[j] = array[j + 1];
-            array[j + 1] = temp;
-          }
-        }
-      }
-      customArray.setElements(array);
-      LOGGER.info("Array sorted with bubble sort");
-    } else {
-      LOGGER.error("CustomArray is null for bubble sort");
+    if (customArray == null) {
       throw new CustomArrayException("Cannot sort null CustomArray");
     }
+    int[] array = customArray.getElements();
+    int n = array.length;
+    for (int i = 0; i < n - 1; i++) {
+      for (int j = 0; j < n - i - 1; j++) {
+        if (array[j] > array[j + 1]) {
+          int temp = array[j];
+          array[j] = array[j + 1];
+          array[j + 1] = temp;
+        }
+      }
+    }
+    customArray.setElements(array);
+    LOGGER.debug("Array id: {} sorted with bubble sort", customArray.getId());
   }
 
   @Override
   public void insertionSort(CustomArray customArray) throws CustomArrayException {
-    if (customArray != null) {
-      int[] array = customArray.getElements();
-      int n = array.length;
-      for (int i = 1; i < n; i++) {
-        int key = array[i];
-        int j = i - 1;
-        while (j >= 0 && array[j] > key) {
-          array[j + 1] = array[j];
-          j = j - 1;
-        }
-        array[j + 1] = key;
-      }
-      customArray.setElements(array);
-      LOGGER.info("Array sorted with insertion sort");
-    } else {
-      LOGGER.error("CustomArray is null for insertion sort");
+    if (customArray == null) {
       throw new CustomArrayException("Cannot sort null CustomArray");
     }
+    int[] array = customArray.getElements();
+    int n = array.length;
+    for (int i = 1; i < n; i++) {
+      int key = array[i];
+      int j = i - 1;
+      while (j >= 0 && array[j] > key) {
+        array[j + 1] = array[j];
+        j = j - 1;
+      }
+      array[j + 1] = key;
+    }
+    customArray.setElements(array);
+    LOGGER.debug("Array id: {} sorted with insertion sort", customArray.getId());
   }
 }

@@ -44,4 +44,40 @@ class CustomParserImplTest {
     // then
     assertThrows(CustomArrayException.class, executable);
   }
+
+  @Test
+  void parseLineToIntArrayShouldThrowExceptionWhenDashIsUsedAsDelimiter() {
+    // given
+    String invalidLine = "1-2";
+
+    // when
+    Executable executable = () -> parser.parseLineToIntArray(invalidLine);
+
+    // then
+    assertThrows(CustomArrayException.class, executable);
+  }
+
+  @Test
+  void parseLineToIntArrayShouldThrowExceptionWhenNumberIsOutOfIntRange() {
+    // given
+    String overflowLine = "1, 99999999999";
+
+    // when
+    Executable executable = () -> parser.parseLineToIntArray(overflowLine);
+
+    // then
+    assertThrows(CustomArrayException.class, executable);
+  }
+
+  @Test
+  void parseLineToIntArrayShouldThrowExceptionWhenLineIsNull() {
+    // given
+    String nullLine = null;
+
+    // when
+    Executable executable = () -> parser.parseLineToIntArray(nullLine);
+
+    // then
+    assertThrows(CustomArrayException.class, executable);
+  }
 }

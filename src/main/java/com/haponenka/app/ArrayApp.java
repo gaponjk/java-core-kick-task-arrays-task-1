@@ -1,5 +1,6 @@
 package com.haponenka.app;
 
+import com.haponenka.app.comparator.ArrayLengthComparator;
 import com.haponenka.app.entity.ArrayStatistics;
 import com.haponenka.app.entity.CustomArray;
 import com.haponenka.app.event.ArrayEvent;
@@ -14,16 +15,16 @@ import com.haponenka.app.reader.CustomFileReader;
 import com.haponenka.app.reader.impl.CustomFileReaderImpl;
 import com.haponenka.app.repository.CustomArrayRepository;
 import com.haponenka.app.repository.impl.CustomArrayRepositoryImpl;
+import com.haponenka.app.repository.specification.ArraySpecification;
+import com.haponenka.app.repository.specification.impl.SumGreaterThanSpecification;
 import com.haponenka.app.service.ArrayService;
 import com.haponenka.app.service.ArraySortService;
 import com.haponenka.app.service.impl.ArrayServiceImpl;
 import com.haponenka.app.service.impl.ArraySortServiceImpl;
-import com.haponenka.app.validator.ArrayLineValidator;
 import com.haponenka.app.validator.impl.ArrayLineValidatorImpl;
 import com.haponenka.app.warehouse.ArrayWarehouse;
 import java.util.List;
-import java.util.OptionalDouble;
-import java.util.OptionalInt;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -31,85 +32,96 @@ public class ArrayApp {
 
   private static final Logger LOGGER = LogManager.getLogger(ArrayApp.class);
   private static final String DATA_FILE_PATH = "data/arrays.txt";
+  private static final long SUM_THRESHOLD = 10;
+  private static final int DEMO_VALUE = 100;
 
   public static void main(String[] args) {
     LOGGER.info("Application started");
 
-    CustomFileReader fileReader = new CustomFileReaderImpl();
-    ArrayLineValidator validator = new ArrayLineValidatorImpl();
-    CustomParser parser = new CustomParserImpl(validator);
-    CustomArrayFactory factory = new CustomArrayFactoryImpl();
     ArrayService arrayService = new ArrayServiceImpl();
-    ArraySortService sortService = new ArraySortServiceImpl();
+    ArrayWarehouse warehouse = ArrayWarehouse.getInstance();
+    CustomArrayRepository repository = CustomArrayRepositoryImpl.getInstance();
+    ArrayObserver observer = new ArrayObserverImpl(arrayService, warehouse);
 
     List<String> lines;
     try {
+      CustomFileReader fileReader = new CustomFileReaderImpl();
       lines = fileReader.readLines(DATA_FILE_PATH);
     } catch (CustomArrayException e) {
       LOGGER.error("Failed to read input data file: {}", DATA_FILE_PATH, e);
       return;
     }
 
+    loadArrays(lines, repository, observer);
+    logStatistics(repository, warehouse);
+    sortArrays(repository);
+    runQueries(repository, arrayService);
+    changeFirstElement(repository, warehouse);
+
+    LOGGER.info("Application completed");
+  }
+
+  private static void loadArrays(
+      List<String> lines, CustomArrayRepository repository, ArrayObserver observer) {
+    CustomParser parser = new CustomParserImpl(new ArrayLineValidatorImpl());
+    CustomArrayFactory factory = new CustomArrayFactoryImpl();
     for (String line : lines) {
-      boolean isValid = validator.isValid(line);
-      if (isValid) {
-        try {
-          int[] elements = parser.parseLineToIntArray(line);
-          CustomArray customArray = factory.createCustomArray(elements);
-          LOGGER.info("Successfully processed array: {}", customArray);
-
-          OptionalInt minOptional = arrayService.findMin(customArray);
-          if (minOptional.isPresent()) {
-            int min = minOptional.getAsInt();
-            LOGGER.info("Min: {}", min);
-          }
-
-          OptionalInt maxOptional = arrayService.findMax(customArray);
-          if (maxOptional.isPresent()) {
-            int max = maxOptional.getAsInt();
-            LOGGER.info("Max: {}", max);
-          }
-
-          OptionalInt sumOptional = arrayService.calculateSum(customArray);
-          if (sumOptional.isPresent()) {
-            int sum = sumOptional.getAsInt();
-            LOGGER.info("Sum: {}", sum);
-          }
-
-          OptionalDouble averageOptional = arrayService.calculateAverage(customArray);
-          if (averageOptional.isPresent()) {
-            double avg = averageOptional.getAsDouble();
-            LOGGER.info("Average: {}", avg);
-          }
-
-          sortService.bubbleSort(customArray);
-          LOGGER.info("After bubble sort: {}", customArray);
-        } catch (CustomArrayException e) {
-          LOGGER.error("Error creating or processing array for line: {}", line, e);
-        }
-      } else {
-        LOGGER.warn("Skipping invalid line: {}", line);
+      try {
+        int[] elements = parser.parseLineToIntArray(line);
+        CustomArray customArray = factory.createCustomArray(elements);
+        customArray.attach(observer);
+        // Fill the warehouse with the initial statistics; later changes arrive via the observer.
+        observer.update(new ArrayEvent(customArray));
+        repository.add(customArray);
+      } catch (CustomArrayException e) {
+        LOGGER.warn("Skipping line: {}", e.getMessage());
       }
     }
-    LOGGER.info("Application completed successfully");
-    ArrayObserver observer = new ArrayObserverImpl();
+  }
 
-    // 2. Создание массива с регистрацией в Observer
-    CustomArray array1 = new CustomArray("1", 10, 20, 30);
-    array1.attach(observer);
+  private static void logStatistics(CustomArrayRepository repository, ArrayWarehouse warehouse) {
+    for (CustomArray customArray : repository.getAll()) {
+      Optional<ArrayStatistics> statistics = warehouse.get(customArray.getId());
+      if (statistics.isPresent()) {
+        LOGGER.info("{} -> {}", customArray, statistics.get());
+      } else {
+        LOGGER.info("{} -> no statistics", customArray);
+      }
+    }
+  }
 
-    // 3. Первичная инициализация в Warehouse
-    observer.update(new ArrayEvent(array1));
+  private static void sortArrays(CustomArrayRepository repository) {
+    ArraySortService sortService = new ArraySortServiceImpl();
+    for (CustomArray customArray : repository.getAll()) {
+      try {
+        sortService.bubbleSort(customArray);
+        LOGGER.info("After bubble sort: {}", customArray);
+      } catch (CustomArrayException e) {
+        LOGGER.error("Failed to sort array: {}", customArray, e);
+      }
+    }
+  }
 
-    // 4. Добавление в репозиторий
-    CustomArrayRepository repository = CustomArrayRepositoryImpl.getInstance();
-    repository.add(array1);
+  private static void runQueries(CustomArrayRepository repository, ArrayService arrayService) {
+    ArraySpecification specification = new SumGreaterThanSpecification(SUM_THRESHOLD, arrayService);
+    List<CustomArray> found = repository.query(specification);
+    LOGGER.info("Arrays with sum greater than {}: {}", SUM_THRESHOLD, found);
 
-    // 5. Любое изменение элемента автоматически пересчитает Warehouse
-    array1.setElement(0, 100);
+    List<CustomArray> sortedByLength = repository.sort(new ArrayLengthComparator());
+    LOGGER.info("Arrays sorted by length: {}", sortedByLength);
+  }
 
-    // 6. Проверка обновленных значений из Warehouse
-    ArrayStatistics stats = ArrayWarehouse.getInstance().get("1");
-    LOGGER.info("New max in Warehouse: {}", stats.getMax()); // Будет 100
+  private static void changeFirstElement(
+      CustomArrayRepository repository, ArrayWarehouse warehouse) {
+    List<CustomArray> arrays = repository.getAll();
+    if (arrays.isEmpty() || arrays.getFirst().getLength() == 0) {
+      LOGGER.warn("No array available to demonstrate the observer");
+      return;
+    }
+    CustomArray customArray = arrays.getFirst();
+    // Changing an element makes the observer recalculate the statistics in the warehouse.
+    customArray.setElement(0, DEMO_VALUE);
+    Optional<ArrayStatistics> statistics = warehouse.get(customArray.getId());
+    LOGGER.info("After change {} -> {}", customArray, statistics.orElse(null));
   }
 }

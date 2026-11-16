@@ -2,14 +2,20 @@ package com.haponenka.app.event;
 
 import com.haponenka.app.entity.CustomArray;
 
-public class ArrayEvent {
-  private final CustomArray source;
+import java.io.Serial;
+import java.util.EventObject;
+
+public class ArrayEvent extends EventObject {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   public ArrayEvent(CustomArray source) {
-    this.source = source;
+    super(source);
   }
 
+  @Override
   public CustomArray getSource() {
-    return this.source;
+    return (CustomArray) super.getSource();
   }
 }

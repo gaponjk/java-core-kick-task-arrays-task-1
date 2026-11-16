@@ -4,71 +4,94 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.haponenka.app.validator.ArrayLineValidator;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class ArrayLineValidatorImplTest {
 
-  private static final String VALID_COMMA_LINE = "1, 2, 3, 4";
-  private static final String VALID_SEMICOLON_LINE = "10; -20; 30";
-  private static final String VALID_SPACE_LINE = "5  12  -9";
-  private static final String INVALID_CHAR_LINE = "1, 2, x3, 6";
-  private static final String EMPTY_LINE = "   ";
+  private ArrayLineValidator validator;
+
+  @BeforeEach
+  void setUp() {
+    validator = new ArrayLineValidatorImpl();
+  }
 
   @Test
-  void testIsValidShouldReturnTrueForCommaSeparatedNumbers() {
-    // given
-    ArrayLineValidator validator = new ArrayLineValidatorImpl();
-
+  void isValidShouldReturnTrueWhenNumbersAreCommaSeparated() {
     // when
-    boolean actual = validator.isValid(VALID_COMMA_LINE);
+    boolean actual = validator.isValid("1, 2, 3, 4");
 
     // then
     assertTrue(actual);
   }
 
   @Test
-  void testIsValidShouldReturnTrueForSemicolonSeparatedNumbers() {
-    // given
-    ArrayLineValidator validator = new ArrayLineValidatorImpl();
-
+  void isValidShouldReturnTrueWhenNumbersAreSemicolonSeparated() {
     // when
-    boolean actual = validator.isValid(VALID_SEMICOLON_LINE);
+    boolean actual = validator.isValid("10; -20; 30");
 
     // then
     assertTrue(actual);
   }
 
   @Test
-  void testIsValidShouldReturnTrueForSpaceSeparatedNumbers() {
-    // given
-    ArrayLineValidator validator = new ArrayLineValidatorImpl();
-
+  void isValidShouldReturnTrueWhenNumbersAreSpaceSeparated() {
     // when
-    boolean actual = validator.isValid(VALID_SPACE_LINE);
+    boolean actual = validator.isValid("5  12  -9");
 
     // then
     assertTrue(actual);
   }
 
   @Test
-  void testIsValidShouldReturnFalseForInvalidCharacters() {
-    // given
-    ArrayLineValidator validator = new ArrayLineValidatorImpl();
-
+  void isValidShouldReturnTrueWhenLineHasSingleNegativeNumber() {
     // when
-    boolean actual = validator.isValid(INVALID_CHAR_LINE);
+    boolean actual = validator.isValid("-7");
+
+    // then
+    assertTrue(actual);
+  }
+
+  @Test
+  void isValidShouldReturnFalseWhenLineHasInvalidCharacters() {
+    // when
+    boolean actual = validator.isValid("1, 2, x3, 6");
 
     // then
     assertFalse(actual);
   }
 
   @Test
-  void testIsValidShouldReturnFalseForEmptyString() {
-    // given
-    ArrayLineValidator validator = new ArrayLineValidatorImpl();
-
+  void isValidShouldReturnFalseWhenDashIsUsedAsDelimiter() {
     // when
-    boolean actual = validator.isValid(EMPTY_LINE);
+    boolean actual = validator.isValid("1-2");
+
+    // then
+    assertFalse(actual);
+  }
+
+  @Test
+  void isValidShouldReturnFalseWhenDashIsSeparatedBySpaces() {
+    // when
+    boolean actual = validator.isValid("1 - 2");
+
+    // then
+    assertFalse(actual);
+  }
+
+  @Test
+  void isValidShouldReturnFalseWhenLineIsBlank() {
+    // when
+    boolean actual = validator.isValid("   ");
+
+    // then
+    assertFalse(actual);
+  }
+
+  @Test
+  void isValidShouldReturnFalseWhenLineIsNull() {
+    // when
+    boolean actual = validator.isValid(null);
 
     // then
     assertFalse(actual);

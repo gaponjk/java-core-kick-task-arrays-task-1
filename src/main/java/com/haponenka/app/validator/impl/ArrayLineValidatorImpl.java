@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 public class ArrayLineValidatorImpl implements ArrayLineValidator {
 
   private static final Pattern VALID_PATTERN =
-      Pattern.compile("^\\s*-?\\d+(\\s*[,;\\-\\s]\\s*-?\\d+)*\\s*$");
+      Pattern.compile("^\\s*-?\\d+(\\s*[,;\\s]\\s*-?\\d+)*\\s*$");
 
   @Override
   public boolean isValid(String line) {

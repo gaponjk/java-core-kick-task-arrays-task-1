@@ -3,6 +3,7 @@ package com.haponenka.app.warehouse;
 import com.haponenka.app.entity.ArrayStatistics;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -11,12 +12,11 @@ public class ArrayWarehouse {
   private static ArrayWarehouse instance;
   private final Map<String, ArrayStatistics> statisticsMap;
 
-  // Приватный конструктор
   private ArrayWarehouse() {
     this.statisticsMap = new HashMap<>();
   }
 
-  // Непотокобезопасный Singleton согласно требованию ТЗ
+  // Non-thread-safe singleton, as required by the task.
   public static ArrayWarehouse getInstance() {
     if (instance == null) {
       instance = new ArrayWarehouse();
@@ -26,15 +26,18 @@ public class ArrayWarehouse {
 
   public void put(String id, ArrayStatistics statistics) {
     this.statisticsMap.put(id, statistics);
-    LOGGER.info("Saved statistics for id: {}", id);
+    LOGGER.debug("Saved statistics for id: {}", id);
   }
 
-  public ArrayStatistics get(String id) {
-    return this.statisticsMap.get(id);
+  public Optional<ArrayStatistics> get(String id) {
+    return Optional.ofNullable(this.statisticsMap.get(id));
   }
 
-  public void remove(long id) {
-    this.statisticsMap.remove(id);
-    LOGGER.info("Removed statistics for id: {}", id);
+  public boolean remove(String id) {
+    boolean removed = this.statisticsMap.remove(id) != null;
+    if (removed) {
+      LOGGER.debug("Removed statistics for id: {}", id);
+    }
+    return removed;
   }
 }

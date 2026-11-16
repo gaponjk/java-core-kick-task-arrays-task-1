@@ -4,6 +4,7 @@ import com.haponenka.app.entity.CustomArray;
 import com.haponenka.app.service.ArrayService;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
+import java.util.OptionalLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -13,70 +14,67 @@ public class ArrayServiceImpl implements ArrayService {
 
   @Override
   public OptionalInt findMin(CustomArray customArray) {
-    if (customArray != null && customArray.getLength() > 0) {
-      int[] array = customArray.getElements();
-      int min = array[0];
-      for (int i = 1; i < array.length; i++) {
-        if (array[i] < min) {
-          min = array[i];
-        }
-      }
-      LOGGER.info("Min value found: {}", min);
-      return OptionalInt.of(min);
-    } else {
-      LOGGER.warn("CustomArray is null or empty, min cannot be determined");
+    if (isNullOrEmpty(customArray)) {
       return OptionalInt.empty();
     }
+    int[] array = customArray.getElements();
+    int min = array[0];
+    for (int i = 1; i < array.length; i++) {
+      if (array[i] < min) {
+        min = array[i];
+      }
+    }
+    LOGGER.debug("Min value found: {}", min);
+    return OptionalInt.of(min);
   }
 
   @Override
   public OptionalInt findMax(CustomArray customArray) {
-    if (customArray != null && customArray.getLength() > 0) {
-      int[] array = customArray.getElements();
-      int max = array[0];
-      for (int i = 1; i < array.length; i++) {
-        if (array[i] > max) {
-          max = array[i];
-        }
-      }
-      LOGGER.info("Max value found: {}", max);
-      return OptionalInt.of(max);
-    } else {
-      LOGGER.warn("CustomArray is null or empty, max cannot be determined");
+    if (isNullOrEmpty(customArray)) {
       return OptionalInt.empty();
     }
+    int[] array = customArray.getElements();
+    int max = array[0];
+    for (int i = 1; i < array.length; i++) {
+      if (array[i] > max) {
+        max = array[i];
+      }
+    }
+    LOGGER.debug("Max value found: {}", max);
+    return OptionalInt.of(max);
   }
 
   @Override
-  public OptionalInt calculateSum(CustomArray customArray) {
-    if (customArray != null && customArray.getLength() > 0) {
-      int[] array = customArray.getElements();
-      int sum = 0;
-      for (int value : array) {
-        sum += value;
-      }
-      LOGGER.info("Sum calculated: {}", sum);
-      return OptionalInt.of(sum);
-    } else {
-      LOGGER.warn("CustomArray is null or empty, sum cannot be calculated");
-      return OptionalInt.empty();
+  public OptionalLong calculateSum(CustomArray customArray) {
+    if (isNullOrEmpty(customArray)) {
+      return OptionalLong.empty();
     }
+    long sum = sum(customArray.getElements());
+    LOGGER.debug("Sum calculated: {}", sum);
+    return OptionalLong.of(sum);
   }
 
   @Override
   public OptionalDouble calculateAverage(CustomArray customArray) {
-    OptionalInt sumOptional = calculateSum(customArray);
-
-    if (sumOptional.isPresent()) {
-      int sum = sumOptional.getAsInt();
-      int length = customArray.getLength();
-      double average = (double) sum / length;
-
-      LOGGER.info("Average calculated: {}", average);
-      return OptionalDouble.of(average);
-    } else {
-      LOGGER.warn("CustomArray is null or empty, average cannot be calculated");
+    if (isNullOrEmpty(customArray)) {
       return OptionalDouble.empty();
     }
+    int[] array = customArray.getElements();
+    double average = (double) sum(array) / array.length;
+    LOGGER.debug("Average calculated: {}", average);
+    return OptionalDouble.of(average);
+  }
+
+  private static boolean isNullOrEmpty(CustomArray customArray) {
+    return customArray == null || customArray.getLength() == 0;
+  }
+
+  // long is used so the sum of int values cannot overflow.
+  private static long sum(int[] array) {
+    long sum = 0;
+    for (int value : array) {
+      sum += value;
+    }
+    return sum;
   }
 }

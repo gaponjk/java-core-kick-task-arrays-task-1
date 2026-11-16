@@ -5,6 +5,7 @@ import com.haponenka.app.observer.ArrayObserver;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 public class CustomArray {
@@ -13,23 +14,13 @@ public class CustomArray {
   private final List<ArrayObserver> observers;
 
   public CustomArray(String id, int... elements) {
-    this.id = id;
+    this.id = Objects.requireNonNull(id, "id must not be null");
+    this.elements = copyOrEmpty(elements);
     this.observers = new ArrayList<>();
-    if (elements != null) {
-      this.elements = Arrays.copyOf(elements, elements.length);
-    } else {
-      this.elements = new int[0];
-    }
   }
 
   public CustomArray(int... elements) {
-    this.id = String.valueOf(UUID.randomUUID());
-    this.observers = new ArrayList<>();
-    if (elements != null) {
-      this.elements = Arrays.copyOf(elements, elements.length);
-    } else {
-      this.elements = new int[0];
-    }
+    this(UUID.randomUUID().toString(), elements);
   }
 
   public String getId() {
@@ -41,11 +32,7 @@ public class CustomArray {
   }
 
   public void setElements(int[] elements) {
-    if (elements != null) {
-      this.elements = Arrays.copyOf(elements, elements.length);
-    } else {
-      this.elements = new int[0];
-    }
+    this.elements = copyOrEmpty(elements);
     notifyObservers();
   }
 
@@ -79,6 +66,10 @@ public class CustomArray {
     }
   }
 
+  private static int[] copyOrEmpty(int[] source) {
+    return (source != null) ? Arrays.copyOf(source, source.length) : new int[0];
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -88,17 +79,12 @@ public class CustomArray {
       return false;
     }
     CustomArray that = (CustomArray) o;
-    if (!this.id.equals(that.id)) {
-      return false;
-    }
-    return Arrays.equals(this.elements, that.elements);
+    return this.id.equals(that.id);
   }
 
   @Override
   public int hashCode() {
-    int result = (this.id != null) ? this.id.hashCode() : 0;
-    result = 31 * result + Arrays.hashCode(this.elements);
-    return result;
+    return this.id.hashCode();
   }
 
   @Override

@@ -8,7 +8,7 @@ import java.util.List;
 public interface CustomArrayRepository {
   void add(CustomArray customArray);
 
-  void remove(CustomArray customArray);
+  boolean remove(CustomArray customArray);
 
   List<CustomArray> query(ArraySpecification specification);
 

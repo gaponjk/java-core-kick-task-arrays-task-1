@@ -5,42 +5,40 @@ import com.haponenka.app.entity.CustomArray;
 import com.haponenka.app.event.ArrayEvent;
 import com.haponenka.app.observer.ArrayObserver;
 import com.haponenka.app.service.ArrayService;
-import com.haponenka.app.service.impl.ArrayServiceImpl;
 import com.haponenka.app.warehouse.ArrayWarehouse;
-import java.util.OptionalDouble;
-import java.util.OptionalInt;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class ArrayObserverImpl implements ArrayObserver {
   private static final Logger LOGGER = LogManager.getLogger(ArrayObserverImpl.class);
   private final ArrayService arrayService;
+  private final ArrayWarehouse warehouse;
 
-  public ArrayObserverImpl() {
-    this.arrayService = new ArrayServiceImpl();
+  public ArrayObserverImpl(ArrayService arrayService, ArrayWarehouse warehouse) {
+    this.arrayService = arrayService;
+    this.warehouse = warehouse;
   }
 
   @Override
   public void update(ArrayEvent event) {
-    if (event != null && event.getSource() != null) {
-      CustomArray array = event.getSource();
-      String id = array.getId();
-
-      OptionalInt minOpt = this.arrayService.findMin(array);
-      OptionalInt maxOpt = this.arrayService.findMax(array);
-      OptionalInt sumOpt = this.arrayService.calculateSum(array);
-      OptionalDouble avgOpt = this.arrayService.calculateAverage(array);
-
-      int min = minOpt.isPresent() ? minOpt.getAsInt() : 0;
-      int max = maxOpt.isPresent() ? maxOpt.getAsInt() : 0;
-      int sum = sumOpt.isPresent() ? sumOpt.getAsInt() : 0;
-      double avg = avgOpt.isPresent() ? avgOpt.getAsDouble() : 0.0;
-
-      ArrayStatistics statistics = new ArrayStatistics(min, max, sum, avg);
-      ArrayWarehouse.getInstance().put(id, statistics);
-      LOGGER.info("Warehouse statistics updated for array id: {}", id);
-    } else {
-      LOGGER.warn("Received empty or null array event in observer");
+    if (event == null) {
+      LOGGER.warn("Received null array event in observer");
+      return;
     }
+    CustomArray array = event.getSource();
+    String id = array.getId();
+    if (array.getLength() == 0) {
+      // An empty array has no min/max/average, so no statistics are kept for it.
+      this.warehouse.remove(id);
+      LOGGER.info("Array id: {} is empty, statistics removed from warehouse", id);
+      return;
+    }
+    int min = this.arrayService.findMin(array).orElseThrow();
+    int max = this.arrayService.findMax(array).orElseThrow();
+    long sum = this.arrayService.calculateSum(array).orElseThrow();
+    double average = this.arrayService.calculateAverage(array).orElseThrow();
+
+    this.warehouse.put(id, new ArrayStatistics(min, max, sum, average));
+    LOGGER.info("Warehouse statistics updated for array id: {}", id);
   }
 }

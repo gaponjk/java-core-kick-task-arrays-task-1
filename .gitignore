@@ -11,7 +11,7 @@ build/
 buildOutput/
 
 ### IntelliJ IDEA ###
-# Игнорируем персональные кэши и локальные данные пользователя
+# Ignore personal caches and local user data
 .idea/
 !.idea/codeStyles/
 !.idea/encodings.xml
@@ -21,8 +21,8 @@ buildOutput/
 *.ipr
 out/
 
-# Если вы решите хранить общие настройки .idea в git,
-# то вместо строки '.idea/' выше раскомментируйте блок ниже:
+# To keep shared .idea settings in git, replace the '.idea/' line above
+# with the block below:
 # .idea/workspace.xml
 # .idea/tasks.xml
 # .idea/usage.statistics.xml
@@ -84,4 +84,4 @@ desktop.ini
 
 ### Kotlin & Others ###
 .kotlin
-.attach_pid*
+.attach_pid*!/src/test/java/com/haponenka/app/warehouse/ArrayWarehouseTest.java

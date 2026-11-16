@@ -60,4 +60,28 @@ class CustomFileReaderImplTest {
     // then
     assertThrows(CustomFileException.class, executable);
   }
+
+  @Test
+  void readLinesShouldThrowExceptionWhenPathIsBlank() {
+    // given
+    String blankPath = "   ";
+
+    // when
+    Executable executable = () -> reader.readLines(blankPath);
+
+    // then
+    assertThrows(CustomFileException.class, executable);
+  }
+
+  @Test
+  void readLinesShouldThrowExceptionWhenPathIsDirectory(@TempDir Path tempDir) {
+    // given
+    String directoryPath = tempDir.toString();
+
+    // when
+    Executable executable = () -> reader.readLines(directoryPath);
+
+    // then
+    assertThrows(CustomFileException.class, executable);
+  }
 }

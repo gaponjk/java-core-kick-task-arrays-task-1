@@ -3,25 +3,20 @@ package com.haponenka.app.repository.specification.impl;
 import com.haponenka.app.entity.CustomArray;
 import com.haponenka.app.repository.specification.ArraySpecification;
 import com.haponenka.app.service.ArrayService;
-import com.haponenka.app.service.impl.ArrayServiceImpl;
-import java.util.OptionalInt;
+import java.util.OptionalLong;
 
 public class SumGreaterThanSpecification implements ArraySpecification {
-  private final int threshold;
+  private final long threshold;
   private final ArrayService arrayService;
 
-  public SumGreaterThanSpecification(int threshold) {
+  public SumGreaterThanSpecification(long threshold, ArrayService arrayService) {
     this.threshold = threshold;
-    this.arrayService = new ArrayServiceImpl();
+    this.arrayService = arrayService;
   }
 
   @Override
   public boolean specify(CustomArray customArray) {
-    OptionalInt sum = this.arrayService.calculateSum(customArray);
-    if (sum.isPresent()) {
-      return sum.getAsInt() > this.threshold;
-    } else {
-      return false;
-    }
+    OptionalLong sum = this.arrayService.calculateSum(customArray);
+    return sum.isPresent() && sum.getAsLong() > this.threshold;
   }
 }
